@@ -1,67 +1,44 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Oct 25 21:50:24 2018
+Created on Tue Dec 12 11:07:25 2017
 
-第5步：带标签EEG窗的带通滤波器
-EEG窗不同频带级联
-训练CSP并提取特征
+@author: SingleLong
 
-@author: Long
+% 说明：
+
+% 第四步
+
+% 通过CSP求区别有无意图的投影矩阵
+% 并通过CSP投影矩阵提取EEG窗方差特征
 """
 
 import scipy.io as sio
 import numpy as np
-import scipy.signal as sis
 import scipy.linalg as la # 线性代数库
 
+id_subject = 1 # 【受试者的编号】
 num_pair = 4 # 【从CSP投影矩阵里取得特征对数】
 
-eeg = sio.loadmat('E:\\EEGExoskeleton\\Dataset\\Ma\\20180829\\labeledEEG.mat')
-eeg = eeg['output']
+if id_subject < 10:
+    input_eegwin_dict = sio.loadmat('E:\\EEGExoskeleton\\Data\\Subject_0'+\
+                                    str(id_subject)+'_Data\\Subject_0'+\
+                                    str(id_subject)+'_WinEEG.mat')
+else:
+    input_eegwin_dict = sio.loadmat('E:\\EEGExoskeleton\\Data\\Subject_'+\
+                                    str(id_subject)+'_Data\\Subject_'+\
+                                    str(id_subject)+'_WinEEG.mat')
+
+input_eegwin = input_eegwin_dict['WinEEG']
 
 eegwin_0 = [] # 存放标记为-1的EEG窗
 eegwin_1 = [] # 存放标记为1的EEG窗
-
-for i in range(len(eeg)):
-    if int(eeg[i][1]) == -1:
+for i in range(len(input_eegwin)):
+    if int(input_eegwin[i][1]) == -1:
         # 若EEG窗标记为0
-        eegwin_0.append(eeg[i][0])
-    elif int(eeg[i][1]) == 1:
-        eegwin_1.append(eeg[i][0])
-
-# In[带通滤波并级联]
-fs_eeg = 512 # 【采样频率512Hz】
-eeg_winWidth = 384 # 【窗宽度】384对应750ms窗长度
-def bandpass(data,upper,lower):
-    Wn = [2 * upper / fs_eeg, 2 * lower / fs_eeg] # 截止频带0.1-1Hz or 8-30Hz
-    b,a = sis.butter(4, Wn, 'bandpass')
-    
-    filtered_data = np.zeros([32, eeg_winWidth])
-    for row in range(32):
-        filtered_data[row] = sis.filtfilt(b,a,data[row,:]) 
-    
-    return filtered_data 
-
-def hstackwin(out_eeg):
-    """hstackwin : 把四种频段的EEG低通滤波窗合成一个长窗.
-
-    Parameters:
-    -----------
-    - out_eeg: 需要低通滤波的目标EEG窗
-    - label: 目标窗的类别标签
-    """
-    out_eeg_band0 = bandpass(out_eeg,upper=0.3,lower=3)
-    out_eeg_band1 = bandpass(out_eeg,upper=4,lower=7)
-    out_eeg_band2 = bandpass(out_eeg,upper=8,lower=13)
-    out_eeg_band3 = bandpass(out_eeg,upper=13,lower=30)
-    output = [np.hstack((out_eeg_band0,out_eeg_band1,out_eeg_band2,out_eeg_band3))]
-    return output
-
-for i in range(len(eegwin_0)):
-    eegwin_0[i] = hstackwin(eegwin_0[i])[0]
-    eegwin_1[i] = hstackwin(eegwin_1[i])[0]
-
-# In[CSP]
+        eegwin_0.append(input_eegwin[i][0])
+    elif int(input_eegwin[i][1]) == 1:
+        eegwin_1.append(input_eegwin[i][0])
+        
 task = (eegwin_0, eegwin_1)
 
 # 获取EEG窗的标准化空间协方差矩阵
@@ -129,21 +106,18 @@ for i in range(len(eegwin_1)):
     varances = [np.log(x/sum(varances)) for x in varances]
     varances.append(1)
     features.append(varances)
-
-# In[保存CSP矩阵和特征]
-sio.savemat('E:\\EEGExoskeleton\\Dataset\\Ma\\20180829\\features.mat',\
-            {'features' : features})
-sio.savemat('E:\\EEGExoskeleton\\Dataset\\Ma\\20180829\\csp.mat',\
-            {'csp' : csp})
-
-
-
-
-
-
-
-
-
-
-
-
+    
+if id_subject < 10:
+    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_0'+str(id_subject)+\
+                '_Data\\Subject_0'+str(id_subject)+'_features.mat',\
+                {'features' : features})
+    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_0'+str(id_subject)+\
+                '_Data\\Subject_0'+str(id_subject)+'_csp.mat',\
+                {'csp' : csp})
+else:
+    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_'+str(id_subject)+\
+                '_Data\\Subject_'+str(id_subject)+'_features.mat',\
+                {'features' : features})
+    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_'+str(id_subject)+\
+                '_Data\\Subject_'+str(id_subject)+'_csp.mat',\
+                {'csp' : csp})
