@@ -17,7 +17,7 @@ Created on Fri Dec  1 21:25:28 2017
 每次trial一个来回，每个来回6次跨越
 
 备注：受试对象被告知用右腿跨越障碍
-共往返8次，跨越48次，共96+8*2=112个窗
+共往返8次，跨越48次，共96+16=112个窗
 """
 # In[1]:
 import scipy.io as sio
@@ -125,7 +125,7 @@ def find_valley_point(dataset, peakind_sorted):
 # In[7]:
 # 对EEG信号带通滤波
 fs = 512 # 【采样频率512Hz】
-win_width = 350 # 【窗宽度】384对应750ms窗长度
+win_width = 384 # 【窗宽度】384对应750ms窗长度
 fs_gait = 121 # 【步态数据采样频率121Hz】
 def bandpass(data,upper,lower):
     Wn = [2 * upper / fs, 2 * lower / fs] # 截止频带0.1-1Hz or 8-30Hz
@@ -165,6 +165,98 @@ def hstackwin(out_eeg, label):
     out_eeg_band3 = bandpass(out_eeg,upper=13,lower=30)
     output = [np.hstack((out_eeg_band0,out_eeg_band1,out_eeg_band2,out_eeg_band3)), label]
     return output
+# In[EEG Window Generator]
+def winGenerator(i, num_step):
+    """winGenerator : 生成EEG窗.
+
+    Parameters:
+    -----------
+    - i: 跨越时最大角度的索引列表 
+    - num_step: 本次trial的跨越次数
+    """
+    # 当步态数据不是空集时（有效时）   
+    # 取右膝跨越极值点索引
+    r_peakind = find_peak_point(gait_data[i][0])
+    r_peak = [gait_data[i][0][j] for j in r_peakind] # 获取极值点
+    r_peak_sorted = sorted(r_peak, reverse=True) # 将极值点降序排序
+    r_peakind_sorted = [] # 对应降序排序极值点的索引
+    for j in r_peak_sorted[:num_step]:
+        r_peakind_sorted.append(list(gait_data[i][0]).index(j))
+    r_peakind_sorted = np.array(sorted(r_peakind_sorted))
+        
+    # 取左膝跨越极值点索引
+    l_peakind = find_peak_point(gait_data[i][1])
+    l_peak = [gait_data[i][1][j] for j in l_peakind] # 获取极值点
+    l_peak_sorted = sorted(l_peak, reverse=True) # 将极值点降序排序
+    l_peakind_sorted = [] # 对应降序排序极值点的索引
+    for j in l_peak_sorted[:num_step]:
+        l_peakind_sorted.append(list(gait_data[i][1]).index(j))
+    l_peakind_sorted = np.array(sorted(l_peakind_sorted))
+        
+    r_valleyind_sorted = np.array(find_valley_point(gait_data[i][0], r_peakind_sorted)) # 右膝跨越前的极小值点
+    l_valleyind_sorted = np.array(find_valley_point(gait_data[i][1], l_peakind_sorted)) # 左膝跨越前的极小值点
+    num_axis = len(gait_data[i][0])
+       
+    # 取无跨越意图EEG窗，标记为-1   
+    rp_win_index = r_peakind_sorted + peak_bias # 步态窗起始索引
+    lp_win_index = l_peakind_sorted + peak_bias 
+        
+    # 取有跨越意图EEG窗，标记为1
+    rv_win_index = r_valleyind_sorted + valley_bias     
+    lv_win_index = l_valleyind_sorted + valley_bias
+        
+    # 取得每三次跨越完停顿的地方的索引
+    rstop_win_index_sorted = stopwin(rp_win_index, stop_bias)
+    lstop_win_index_sorted = stopwin(lp_win_index, stop_bias)
+        
+    # 以上步态索引转换为EEG信号窗的起始索引
+    rp_win_index = rp_win_index * fs / fs_gait 
+    lp_win_index = lp_win_index * fs / fs_gait
+    rv_win_index = rv_win_index * fs / fs_gait
+    lv_win_index = lv_win_index * fs / fs_gait
+    rstop_win_index = rstop_win_index_sorted * fs / fs_gait
+    lstop_win_index = lstop_win_index_sorted * fs / fs_gait
+        
+    # 测试绘图，观察跨越极大值点位置是否找对
+    Window_plotor_peak(num_axis,gait_data[i][0],r_peakind_sorted,peak_bias,\
+                       rstop_win_index_sorted,gait_win_width)
+    plt.title(str(i+1) + 'th trial\'s peak points', FontSize=16) 
+    plt.savefig("E:\EEGExoskeleton\Data\Images_Subject"+\
+                str(id_subject)+"\Subject"+\
+                str(id_subject)+"_trail"+str(i+1)+"_peak.eps")
+        
+    # 测试绘图，观察跨越前极小值点位置是否找对
+    Window_plotor_valley(num_axis, gait_data[i][0], r_valleyind_sorted, \
+                         valley_bias, gait_win_width) 
+    plt.title(str(i+1) + 'th trial\'s valley points', FontSize=16) 
+    plt.savefig("E:\EEGExoskeleton\Data\Images_Subject"+\
+                str(id_subject)+"\Subject"+\
+                str(id_subject)+"_trail"+str(i+1)+"_valley.eps")
+        
+    for k in range(num_step):
+        if r_peakind_sorted[k] < l_peakind_sorted[k]:
+            # 先跨右腿
+            #print('r') # 测试用，观察跨越用的腿是否一致
+            # 无跨越意图窗
+            out_eeg = eeg_data[0][i][:,int(rp_win_index[k]):(int(rp_win_index[k])+win_width)]
+            output.append(hstackwin(out_eeg,-1))
+            if (k+1)%3 == 0:
+                out_eeg = eeg_data[0][i][:,int(rstop_win_index[int(k/3)]):(int(rstop_win_index[int(k/3)])+win_width)]
+                output.append(hstackwin(out_eeg,-1))
+            # 有跨越意图窗
+            out_eeg =  eeg_data[0][i][:,int(rv_win_index[k]-win_width):int(rv_win_index[k])]
+            output.append(hstackwin(out_eeg,1))
+        else:
+            #print('l') # 测试用，观察跨越用的腿是否一致
+            # 无跨越意图窗
+            out_eeg = eeg_data[0][i][:,int(lp_win_index[k]):(int(lp_win_index[k])+win_width)]
+            output.append(hstackwin(out_eeg,-1))
+            if (k+1)%3 == 0:
+                out_eeg = eeg_data[0][i][:,int(lstop_win_index[int(k/3)]):(int(lstop_win_index[int(k/3)])+win_width)]
+                output.append(hstackwin(out_eeg,-1))
+            # 有跨越意图窗
+            out_eeg =  eeg_data[0][i][:,int(lv_win_index[k]-win_width):int(lv_win_index[k])]
+            output.append(hstackwin(out_eeg,1))   
 # In[10]:      
 out_count = 0 # 输出文件批数
 output = []
@@ -174,114 +266,7 @@ stop_bias = 250 # 【设置停顿处从膝关节角度最大处的偏移值，�
 gait_win_width = fs_gait / fs * win_width # 在步态数据里将划窗可视化，应该把EEG窗的宽度转换到步态窗的宽度
 for i in range(num_trial):
     if len(gait_data[i]):
-        # 当步态数据不是空集时（有效时）
-        
-        # 取右膝跨越极值点索引
-        r_peakind = find_peak_point(gait_data[i][0])
-        r_peak = [gait_data[i][0][j] for j in r_peakind] # 获取极值点
-        r_peak_sorted = sorted(r_peak, reverse=True) # 将极值点降序排序
-        r_peakind_sorted = [] # 对应降序排序极值点的索引
-        for j in r_peak_sorted[:work_trial]:
-            r_peakind_sorted.append(list(gait_data[i][0]).index(j))
-        r_peakind_sorted = np.array(sorted(r_peakind_sorted))
-        
-        # 取左膝跨越极值点索引
-        l_peakind = find_peak_point(gait_data[i][1])
-        l_peak = [gait_data[i][1][j] for j in l_peakind] # 获取极值点
-        l_peak_sorted = sorted(l_peak, reverse=True) # 将极值点降序排序
-        l_peakind_sorted = [] # 对应降序排序极值点的索引
-        for j in l_peak_sorted[:work_trial]:
-            l_peakind_sorted.append(list(gait_data[i][1]).index(j))
-        l_peakind_sorted = np.array(sorted(l_peakind_sorted))
-        
-        r_valleyind_sorted = np.array(find_valley_point(gait_data[i][0], r_peakind_sorted)) # 右膝跨越前的极小值点
-        l_valleyind_sorted = np.array(find_valley_point(gait_data[i][1], l_peakind_sorted)) # 左膝跨越前的极小值点
-        num_axis = len(gait_data[i][0])
-
-        # 取无跨越意图EEG窗，标记为-1   
-        rp_win_index = r_peakind_sorted + peak_bias # 步态窗起始索引
-        lp_win_index = l_peakind_sorted + peak_bias 
-        
-        # 取有跨越意图EEG窗，标记为1
-        rv_win_index = r_valleyind_sorted + valley_bias     
-        lv_win_index = l_valleyind_sorted + valley_bias
-        
-        # 取得每三次跨越完停顿的地方的索引
-        rstop_win_index_sorted = stopwin(rp_win_index, stop_bias)
-        lstop_win_index_sorted = stopwin(lp_win_index, stop_bias)
-        
-        # 以上步态索引转换为EEG信号窗的起始索引
-        rp_win_index = rp_win_index * fs / fs_gait 
-        lp_win_index = lp_win_index * fs / fs_gait
-        rv_win_index = rv_win_index * fs / fs_gait
-        lv_win_index = lv_win_index * fs / fs_gait
-        rstop_win_index = rstop_win_index_sorted * fs / fs_gait
-        lstop_win_index = lstop_win_index_sorted * fs / fs_gait
-        
-        # 测试绘图，观察跨越极大值点位置是否找对
-        Window_plotor_peak(num_axis,gait_data[i][0],r_peakind_sorted,peak_bias,\
-                           rstop_win_index_sorted,gait_win_width)
-        plt.title(str(i+1) + 'th trial\'s peak points') 
-        
-        # 测试绘图，观察跨越前极小值点位置是否找对
-        Window_plotor_valley(num_axis, gait_data[i][0], r_valleyind_sorted, \
-                             valley_bias, gait_win_width) 
-        plt.title(str(i+1) + 'th trial\'s valley points') 
-
-        for k in range(work_trial):
-            if r_peakind_sorted[k] < l_peakind_sorted[k]:
-                # 先跨右腿
-                #print('r') # 测试用，观察跨越用的腿是否一致
-                # 无跨越意图窗
-                out_eeg = eeg_data[0][i][:,int(rp_win_index[k]):(int(rp_win_index[k])+win_width)]
-                output.append(hstackwin(out_eeg,-1))
-                
-                # 取未滤波窗
-#                out_temp = [out_eeg, -1]
-#                output.append(out_temp)
-                
-                if (k+1)%3 == 0:
-                    out_eeg = eeg_data[0][i][:,int(rstop_win_index[int(k/3)]):(int(rstop_win_index[int(k/3)])+win_width)]
-                    output.append(hstackwin(out_eeg,-1))
-                    
-                    # 取未滤波窗
-#                    out_temp = [out_eeg, -1]
-#                    output.append(out_temp)
-                    
-                # 有跨越意图窗
-                out_eeg =  eeg_data[0][i][:,int(rv_win_index[k]-win_width):int(rv_win_index[k])]
-                output.append(hstackwin(out_eeg,1))
-                
-                # 取未滤波窗
-#                out_temp = [out_eeg, 1]
-#                output.append(out_temp)
-                
-            else:
-                #print('l') # 测试用，观察跨越用的腿是否一致
-                # 无跨越意图窗
-                out_eeg = eeg_data[0][i][:,int(lp_win_index[k]):(int(lp_win_index[k])+win_width)]
-                output.append(hstackwin(out_eeg,-1))
-                
-                # 取未滤波窗
-#                out_temp = [out_eeg, -1]
-#                output.append(out_temp)
-                
-                if (k+1)%3 == 0:
-                    out_eeg = eeg_data[0][i][:,int(lstop_win_index[int(k/3)]):(int(lstop_win_index[int(k/3)])+win_width)]
-                    output.append(hstackwin(out_eeg,-1))
-                    
-                    # 取未滤波窗
-#                    out_temp = [out_eeg, -1]
-#                    output.append(out_temp)
-                    
-                # 有跨越意图窗
-                out_eeg =  eeg_data[0][i][:,int(lv_win_index[k]-win_width):int(lv_win_index[k])]
-                output.append(hstackwin(out_eeg,1))
-                
-                # 取未滤波窗
-#                out_temp = [out_eeg, -1]
-#                output.append(out_temp)
-                     
+        winGenerator(i, work_trial)                  
         out_count += 1
     else:
         continue
