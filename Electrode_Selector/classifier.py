@@ -70,7 +70,7 @@ classifier.fit(X_train, y_train)
 
 print("\nScores across the parameter grid:")
 for params, avg_score, _ in classifier.grid_scores_:
-    print(params, '-->', round(avg_score, 3))
+    print(params, '-->', round(avg_score, 4))
 
 print("\nHighest scoring parameter set:", classifier.best_params_)
 
@@ -222,7 +222,7 @@ else:
 #    if int(labels[i]) == 1:
 #        count = count + 1
 
-## In[4]:
+# In[4]:
 ## 对EEG信号带通滤波
 #fs = 512 # 【采样频率512Hz】
 #win_width = 384 # 【窗宽度】384对应750ms窗长度
