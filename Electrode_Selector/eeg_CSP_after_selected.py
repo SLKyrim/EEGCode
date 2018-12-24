@@ -23,6 +23,10 @@ from sklearn.metrics import classification_report
 from sklearn import svm
 
 from sklearn import cross_validation
+
+# In[忽略CSP处警告：ComplexWarning: Casting complex values to real discards the imaginary part]
+import warnings
+warnings.filterwarnings("ignore") 
 # In[2]
 id_subject = 1 # 【受试者的编号】
 num_pair = 4 # 【从CSP投影矩阵里取得特征对数】
