@@ -236,23 +236,13 @@ for f in range(4):
         for i in range(len(cap_list)):
             cap_score[cap_list[i]] = cap_score[cap_list[i]] + 32 - i
         
-score = sorted(cap_score.items(),key = lambda x:x[1],reverse = True)
+score = sorted(cap_score.items(),key = lambda x:x[1],reverse = True) # 评分从高到低排序
+score_out = sorted(cap_score.items(),key = lambda x:x[1])# 评分从低到高排序
 
 print ("\n")
+output = []
 for i in range(len(score)):
     print(score[i][0])
+    output.append(score_out[i][0])
 # In[]  
-#if id_subject < 10:
-#    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_0'+str(id_subject)+\
-#                '_Data\\Subject_0'+str(id_subject)+'_features.mat',\
-#                {'features' : features})
-#    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_0'+str(id_subject)+\
-#                '_Data\\Subject_0'+str(id_subject)+'_csp.mat',\
-#                {'csp' : csp})
-#else:
-#    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_'+str(id_subject)+\
-#                '_Data\\Subject_'+str(id_subject)+'_features.mat',\
-#                {'features' : features})
-#    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_'+str(id_subject)+\
-#                '_Data\\Subject_'+str(id_subject)+'_csp.mat',\
-#                {'csp' : csp})
+sio.savemat('score_total.mat',{'score':output})

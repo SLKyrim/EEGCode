@@ -100,13 +100,14 @@ for i in range(num_trial):
         gait_data[0][i][0] = r_pass
         gait_data[0][i][1] = l_pass
         
-        plt.figure(figsize=[15,4])
+        plt.figure(figsize=[15,4])        
+        plt.grid(ls='--')  # 生成网格
         plt.rc('font',family='Times New Roman') # 设置全局字体
         plt.tick_params(labelsize=15) # 设置坐标刻度字体
         r_pass_axis = [i for i in range(len(r_pass))]
         l_pass_axis = [i for i in range(len(l_pass))]
         plt.plot(r_pass_axis,r_pass,label='right knee')
-        plt.plot(l_pass_axis,l_pass,"r",label='left knee')
+        plt.plot(l_pass_axis,l_pass,"green",label='left knee')
         plt.legend(loc=2)
         plt.title(str(i+1) + 'th trial\'s gait', FontSize=16) 
         plt.xlabel('Time (sampling points)',FontSize=16)

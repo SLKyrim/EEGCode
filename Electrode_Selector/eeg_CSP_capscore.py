@@ -25,7 +25,7 @@ from sklearn.externals import joblib
 
 from sklearn import cross_validation
 # In[2]
-id_subject = 1 # 【受试者的编号】
+id_subject = 6 # 【受试者的编号】
 num_pair = 4 # 【从CSP投影矩阵里取得特征对数】
 
 if id_subject < 10:
@@ -80,6 +80,8 @@ cap_score = {'Fp1':0,'AF3':0,'F7 ':0,'F3 ':0,'FC1':0,'FC5':0,
              'P4 ':0,'P8 ':0,'CP6':0,'CP2':0,'C4 ':0,'T8 ':0,
              'FC6':0,'FC2':0,'F4 ':0,'F8 ':0,'AF4':0,'Fp2':0,
              'Fz ':0,'Cz ':0}
+
+avg_acc = 0 # 平均分类准确率
 # In[]
 def task_Generator(eegwin, label):
     task_0 = [] # 存放标记为-1的EEG窗
@@ -116,7 +118,7 @@ def feat_Generator(task_0, task_1):
     return np.reshape(features,(len(features),num_pair*2+1))
 
 # In[3]
-for k in range(10):
+for k in range(0,10):
     # 80%的数据做训练，20%做测试
     X = [] # EEG window data 
     y = [] # EEG window label
@@ -208,58 +210,62 @@ for k in range(10):
 
     accuracy = cross_validation.cross_val_score(classifier, feat_test_X, feat_test_y, scoring='accuracy', cv=5)
     print ("Performance in test set: " + str(round(accuracy.mean(), 4)))
+    
+    avg_acc = avg_acc + round(accuracy.mean(), 4)
+    
+print (avg_acc / 10)
 # In[Save the classification model]
-    if id_subject < 10:
-        joblib.dump(classifier, "E:\\EEGExoskeleton\\Data\\Models\\Subject_0"+str(id_subject)+"_gridsearch_SVM.m")
-    else:
-        joblib.dump(classifier, "E:\\EEGExoskeleton\\Data\\Models\\Subject_"+str(id_subject)+"_gridsearch_SVM.m")
+#    if id_subject < 10:
+#        joblib.dump(classifier, "E:\\EEGExoskeleton\\Data\\Models\\Subject_0"+str(id_subject)+"_gridsearch_SVM.m")
+#    else:
+#        joblib.dump(classifier, "E:\\EEGExoskeleton\\Data\\Models\\Subject_"+str(id_subject)+"_gridsearch_SVM.m")
 # In[Electrode Selection]
 # Ref: Meng, J., et al. 
 # Automated selecting subset of channels based on CSP in motor imagery brain-computer interface system. 
 # in Robotics and biomimetics (ROBIO), 2009 IEEE international conference on. 2009. IEEE.
-    score_list = [] # 评分表
-    # axis = None时，输入数据为一维则返回向量范数，二维时返回矩阵范数
-    M = np.linalg.norm(csp, ord=1, axis=None)
-    for i in range(len(csp[0])):
-        m = np.linalg.norm(csp[:,i], ord=1, axis=None)
-        score_list.append(m/M)
-    score_order = np.argsort(score_list)
-    score_order = score_order[::-1]+1
-
-    cap_list = [] # 保存最优电极顺序
-    print ("\nOptimal electrode sorted order: ")
-    for i in range(len(score_order)):
-        cap_list.append(cap[str(score_order[i])])
-        print (cap[str(score_order[i])], end=' ')
-        #    print (cap[str(score_order[i])])
-
-    for i in range(len(cap_list)):
-        cap_score[cap_list[i]] = cap_score[cap_list[i]] + 32 - i
-        
-score = sorted(cap_score.items(),key = lambda x:x[1],reverse = True) # 评分从高到低排序
-score_out = sorted(cap_score.items(),key = lambda x:x[1])# 评分从低到高排序
-
-print ("\n")
-output = []
-for i in range(len(score)):
-    print(score[i][0])
-    output.append(score_out[i][0])
-# In[]  
-if id_subject < 10:
+#    score_list = [] # 评分表
+#    # axis = None时，输入数据为一维则返回向量范数，二维时返回矩阵范数
+#    M = np.linalg.norm(csp, ord=1, axis=None)
+#    for i in range(len(csp[0])):
+#        m = np.linalg.norm(csp[:,i], ord=1, axis=None)
+#        score_list.append(m/M)
+#    score_order = np.argsort(score_list)
+#    score_order = score_order[::-1]+1
+#
+#    cap_list = [] # 保存最优电极顺序
+#    print ("\nOptimal electrode sorted order: ")
+#    for i in range(len(score_order)):
+#        cap_list.append(cap[str(score_order[i])])
+#        print (cap[str(score_order[i])], end=' ')
+#        #    print (cap[str(score_order[i])])
+#
+#    for i in range(len(cap_list)):
+#        cap_score[cap_list[i]] = cap_score[cap_list[i]] + 32 - i
+#        
+#score = sorted(cap_score.items(),key = lambda x:x[1],reverse = True) # 评分从高到低排序
+#score_out = sorted(cap_score.items(),key = lambda x:x[1])# 评分从低到高排序
+#
+#print ("\n")
+#output = []
+#for i in range(len(score)):
+#    print(score[i][0])
+#    output.append(score_out[i][0])
+## In[]  
+#if id_subject < 10:
+##    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_0'+str(id_subject)+\
+##                '_Data\\Subject_0'+str(id_subject)+'_features.mat',\
+##                {'features' : features})
+##    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_0'+str(id_subject)+\
+##                '_Data\\Subject_0'+str(id_subject)+'_csp.mat',\
+##                {'csp' : csp})
 #    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_0'+str(id_subject)+\
-#                '_Data\\Subject_0'+str(id_subject)+'_features.mat',\
-#                {'features' : features})
-#    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_0'+str(id_subject)+\
-#                '_Data\\Subject_0'+str(id_subject)+'_csp.mat',\
-#                {'csp' : csp})
-    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_0'+str(id_subject)+\
-                '_Data\\Subject_0'+str(id_subject)+'_score.mat',{'score':output})
-else:
+#                '_Data\\Subject_0'+str(id_subject)+'_score.mat',{'score':output})
+#else:
+##    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_'+str(id_subject)+\
+##                '_Data\\Subject_'+str(id_subject)+'_features.mat',\
+##                {'features' : features})
+##    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_'+str(id_subject)+\
+##                '_Data\\Subject_'+str(id_subject)+'_csp.mat',\
+##                {'csp' : csp})
 #    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_'+str(id_subject)+\
-#                '_Data\\Subject_'+str(id_subject)+'_features.mat',\
-#                {'features' : features})
-#    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_'+str(id_subject)+\
-#                '_Data\\Subject_'+str(id_subject)+'_csp.mat',\
-#                {'csp' : csp})
-    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_'+str(id_subject)+\
-                '_Data\\Subject_0'+str(id_subject)+'_score.mat',{'score':output})
+#                '_Data\\Subject_0'+str(id_subject)+'_score.mat',{'score':output})

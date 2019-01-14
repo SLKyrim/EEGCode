@@ -12,35 +12,30 @@ Created on Fri Dec  1 21:25:28 2017
 % 划窗截取EEG信号
 % 生成指定受试对象的有意图和无意图区域的EEG窗
 
-% 专门针对第5个受试对象的划窗函数
-共进行了26次trail
-第1次：往返1次
-第2次：打标失败，去掉
+% 专门针对第一个受试对象的划窗函数
+受试对象1共进行了20次trail
+第1次：打标失败
+第2次：往返1次
 第3次：往返1次
 第4次：往返1次
 第5次：往返1次
-第6次：往返1次
+第6次：打标失败
 第7次：往返1次
-第8次：往返1次
-第9次：打标失败，去掉
-第10次：往返1次
+第8次：往返2次
+第9次：往返2次
+第10次：往返2次
 第11次：往返2次
 第12次：往返2次
-第13次：往返2次，往后的组或多或少有干扰
-第14次：往返2次
-第15次：往返2次
-第16次：往返2次
-第17次：打标失败，去掉
-第18次：往返2次
-第19次：往返2次
-第20次：往返2次
-第21次：往返1次
-第22次：往返1次
-第23次：往返1次
-第24次：往返1次，有干扰
-第25次：往返1次，有干扰
-第26次：打标失败，去掉
-共往返27次，共27*12=324个窗
+第13次：往返3次
+第14次：往返3次；数据不好处理，去掉
+第15次：往返3次
+第16次：打标失败
+第17次：往返3次
+第18次：往返3次；数据不好处理，去掉
+第19次：往返3次
+第20次：往返3次；数据不好处理，去掉
+备注：经测试，受试对象基本为右腿跨越，偶有左腿跨越
+最后有效trail有14组，共往返27次，跨越162次，共324+54=378个窗
 """
 # In[1]:
 import scipy.io as sio
@@ -49,33 +44,12 @@ import scipy.signal as sis
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-# In[]
-
-# 电极帽电极分布
-cap_id = {'Fp1':1 ,'AF3':2 ,'F7 ':3 ,'F3 ':4 ,'FC1':5 ,'FC5':6 ,
-          'T7 ':7 ,'C3 ':8 ,'CP1':9 ,'CP5':10,'P7 ':11,'P3 ':12,
-          'Pz ':13,'PO3':14,'O1 ':15,'Oz ':16,'O2 ':17,'PO4':18,
-          'P4 ':19,'P8 ':20,'CP6':21,'CP2':22,'C4 ':23,'T8 ':24,
-          'FC6':25,'FC2':26,'F4 ':27,'F8 ':28,'AF4':29,'Fp2':30,
-          'Fz ':31,'Cz ':32}
-
-score = ['FC1','Cz ','CP2','CP1','C3 ','P3 ','C4 ','CP6','AF3','Fz ','Pz ',
-         'CP5','PO3','P4 ','PO4','Fp2','FC5','FC6','Oz ','FC2','F3 ','AF4',
-         'Fp1','O1 ','F4 ','F8 ','F7 ','O2 ','T8 ','P7 ','T7 ','P8 ']
-score.reverse()
-
-num_elec = 16 # 最佳子集通道数
-
-elec_id = [] # 需要去掉的电极索引
-for k in range(32-num_elec):
-    elec_id.append(cap_id[score[k]]-1)
-
 # In[2]:
-id_subject = 5 # 【受试者的编号】
+id_subject = 1 # 【受试者的编号】
 work_trial_1 = 6 # 往返1次的跨越次数
 work_trial_2 = 12 # 往返2次的跨越次数
 work_trial_3 = 18 # 往返3次的跨越次数
-work_trial_4 = 24 # 往返3次的跨越次数
+
 
 if id_subject < 10:
     gait_mat_data = sio.loadmat('E:\\EEGExoskeleton\\Data\\Subject_0' +\
@@ -97,47 +71,47 @@ eeg_data = eeg_mat_data['CutedEEG']
 
 num_trial = len(gait_data) # 获取受试者进行试验的次数
 
-# In[]
-eeg_temp = []
-for i in range(num_trial):
-    # 删掉次优的电极（第三个参数为0位删除行）
-    eeg_temp.append(np.delete(eeg_data[0][i], elec_id, 0))
-    
-eeg_data = eeg_temp
 # In[3]:
 # 绘图-测试用
-def Window_plotor_peak(num_axis, data, index_sorted, bias, stop_win_index, win_width):
+def Window_plotor_peak(num_axis, r_data, l_data, index_sorted, bias, stop_win_index, win_width):
     # 绘制峰值点以及相应划窗
     data_axis = [i for i in range(num_axis)]
     plt.figure(figsize=[15,4])
+    plt.grid(ls='--')  # 生成网格
     plt.rc('font',family='Times New Roman') # 设置全局字体
     plt.tick_params(labelsize=15) # 设置坐标刻度字体
     plt.xlabel('Time (sampling points)',FontSize=16)
     plt.ylabel('Joint Angle (°)',FontSize=16)
     ax = plt.gca() # 创建子图ax，用来画窗框
-    plt.plot(data_axis, data)
+    plt.plot(data_axis, r_data, label='right knee')
+    plt.plot(data_axis, l_data, "r", label='left knee')
+    plt.legend(loc=2)
     for i in index_sorted:
-        plt.scatter(i, data[i])
-        rect = patches.Rectangle((i+bias,data[i]),win_width,-40,linewidth=1,edgecolor='r',facecolor='none')
+        plt.scatter(i, r_data[i])
+        rect = patches.Rectangle((i+bias,r_data[i]),win_width,-40,linewidth=3,edgecolor='green',facecolor='none')
         ax.add_patch(rect)
-#    for i in stop_win_index:
-#        plt.scatter(i, data[i])
-#        rect = patches.Rectangle((i,data[i]),win_width,20,linewidth=1,edgecolor='r',facecolor='none')
-#        ax.add_patch(rect)
+    for i in stop_win_index:
+        plt.scatter(i, r_data[i])
+        rect = patches.Rectangle((i,r_data[i]),win_width,20,linewidth=3,edgecolor='green',facecolor='none')
+        ax.add_patch(rect)
 
-def Window_plotor_valley(num_axis, data, index_sorted, bias, win_width):
+def Window_plotor_valley(num_axis, r_data, l_data, index_sorted, bias, win_width):
     # 绘制谷值点以及相应划窗
     data_axis = [i for i in range(num_axis)]
     plt.figure(figsize=[15,4])
+    plt.grid(ls='--')  # 生成网格
     plt.rc('font',family='Times New Roman') # 设置全局字体
     plt.tick_params(labelsize=15) # 设置坐标刻度字体
     plt.xlabel('Time (sampling points)',FontSize=16)
     plt.ylabel('Joint Angle (°)',FontSize=16)
     ax = plt.gca() # 创建子图ax，用来画窗框
-    plt.plot(data_axis, data)
+    plt.plot(data_axis, r_data, label='right knee')
+    plt.plot(data_axis, l_data, "r", label='left knee')
+    plt.legend(loc=2)
     for i in index_sorted:
-        plt.scatter(i, data[i])
-        rect = patches.Rectangle((i+bias,data[i]),-win_width,40,linewidth=1,edgecolor='r',facecolor='none')
+        plt.scatter(i, r_data[i])
+#        rect = patches.Rectangle((i+bias,r_data[i]),-win_width,40,linewidth=3,edgecolor='#C71585',facecolor='none')
+        rect = patches.Rectangle((i+bias,r_data[i]),-win_width,40,linewidth=3,edgecolor='#9ACD32',facecolor='none')
         ax.add_patch(rect)
 
 # In[5]:
@@ -195,8 +169,8 @@ def bandpass(data,upper,lower):
     Wn = [2 * upper / fs, 2 * lower / fs] # 截止频带0.1-1Hz or 8-30Hz
     b,a = sis.butter(4, Wn, 'bandpass')
     
-    filtered_data = np.zeros([num_elec, win_width])
-    for row in range(num_elec):
+    filtered_data = np.zeros([32, win_width])
+    for row in range(32):
         filtered_data[row] = sis.filtfilt(b,a,data[row,:]) 
     
     return filtered_data 
@@ -278,11 +252,11 @@ def winGenerator(i, num_step):
     lp_win_index = lp_win_index * fs / fs_gait
     rv_win_index = rv_win_index * fs / fs_gait
     lv_win_index = lv_win_index * fs / fs_gait
-#    rstop_win_index = rstop_win_index_sorted * fs / fs_gait
-#    lstop_win_index = lstop_win_index_sorted * fs / fs_gait
+    rstop_win_index = rstop_win_index_sorted * fs / fs_gait
+    lstop_win_index = lstop_win_index_sorted * fs / fs_gait
         
     # 测试绘图，观察跨越极大值点位置是否找对
-    Window_plotor_peak(num_axis,gait_data[i][0],r_peakind_sorted,peak_bias,\
+    Window_plotor_peak(num_axis,gait_data[i][0],gait_data[i][1],r_peakind_sorted,peak_bias,\
                        rstop_win_index_sorted,gait_win_width)
     plt.title(str(i+1) + 'th trial\'s peak points', FontSize=16) 
     plt.savefig("E:\EEGExoskeleton\Data\Images_Subject"+\
@@ -290,7 +264,7 @@ def winGenerator(i, num_step):
                 str(id_subject)+"_trail"+str(i+1)+"_peak.eps")
         
     # 测试绘图，观察跨越前极小值点位置是否找对
-    Window_plotor_valley(num_axis, gait_data[i][0], r_valleyind_sorted, \
+    Window_plotor_valley(num_axis, gait_data[i][0],gait_data[i][1], r_valleyind_sorted, \
                          valley_bias, gait_win_width) 
     plt.title(str(i+1) + 'th trial\'s valley points', FontSize=16) 
     plt.savefig("E:\EEGExoskeleton\Data\Images_Subject"+\
@@ -302,42 +276,44 @@ def winGenerator(i, num_step):
             # 先跨右腿
             #print('r') # 测试用，观察跨越用的腿是否一致
             # 无跨越意图窗
-            out_eeg = eeg_data[i][:,int(rp_win_index[k]):(int(rp_win_index[k])+win_width)]
+            out_eeg = eeg_data[0][i][:,int(rp_win_index[k]):(int(rp_win_index[k])+win_width)]
             output.append(hstackwin(out_eeg,-1))
-#            if (k+1)%3 == 0:
-#                out_eeg = eeg_data[i][:,int(rstop_win_index[int(k/3)]):(int(rstop_win_index[int(k/3)])+win_width)]
-#                output.append(hstackwin(out_eeg,-1))
+            if (k+1)%3 == 0:
+                out_eeg = eeg_data[0][i][:,int(rstop_win_index[int(k/3)]):(int(rstop_win_index[int(k/3)])+win_width)]
+                output.append(hstackwin(out_eeg,-1))
             # 有跨越意图窗
-            out_eeg =  eeg_data[i][:,int(rv_win_index[k]-win_width):int(rv_win_index[k])]
+            out_eeg =  eeg_data[0][i][:,int(rv_win_index[k]-win_width):int(rv_win_index[k])]
             output.append(hstackwin(out_eeg,1))
         else:
             #print('l') # 测试用，观察跨越用的腿是否一致
             # 无跨越意图窗
-            out_eeg = eeg_data[i][:,int(lp_win_index[k]):(int(lp_win_index[k])+win_width)]
+            out_eeg = eeg_data[0][i][:,int(lp_win_index[k]):(int(lp_win_index[k])+win_width)]
             output.append(hstackwin(out_eeg,-1))
-#            if (k+1)%3 == 0:
-#                out_eeg = eeg_data[i][:,int(lstop_win_index[int(k/3)]):(int(lstop_win_index[int(k/3)])+win_width)]
-#                output.append(hstackwin(out_eeg,-1))
+            if (k+1)%3 == 0:
+                out_eeg = eeg_data[0][i][:,int(lstop_win_index[int(k/3)]):(int(lstop_win_index[int(k/3)])+win_width)]
+                output.append(hstackwin(out_eeg,-1))
             # 有跨越意图窗
-            out_eeg =  eeg_data[i][:,int(lv_win_index[k]-win_width):int(lv_win_index[k])]
+            out_eeg =  eeg_data[0][i][:,int(lv_win_index[k]-win_width):int(lv_win_index[k])]
             output.append(hstackwin(out_eeg,1))                   
 # In[10]:        
 out_count = 0 # 输出文件批数
 output = []
 peak_bias = 40 # 【设置从膝关节角度最大处的偏移值，作为划无意图窗的起点】
 valley_bias = 0 # 【设置从膝关节角度最大处的偏移值，作为划无意图窗的起点】
-stop_bias = 400 # 【设置停顿处从膝关节角度最大处的偏移值，作为划无意图窗的起点】
+stop_bias = 450 # 【设置停顿处从膝关节角度最大处的偏移值，作为划无意图窗的起点】
 gait_win_width = fs_gait / fs * win_width # 在步态数据里将划窗可视化，应该把EEG窗的宽度转换到步态窗的宽度
-for i in range(num_trial):   
-    if len(gait_data[i]) and i>=0 and i<=9 and i!=1 and i!=8:
-        winGenerator(i, work_trial_1)          
-        out_count += 1     
-    elif len(gait_data[i]) and i>=10 and i<=19 and i!=12 and i!=16:
-        winGenerator(i, work_trial_2)          
-        out_count += 1     
-    elif len(gait_data[i]) and i>=20 and i!=23 and i!=24 and i!=25:
-        winGenerator(i, work_trial_1)          
-        out_count += 1     
+for i in range(num_trial):
+    if len(gait_data[i]) and i>=0 and i<=6: # 前7次往返1次
+        winGenerator(i, work_trial_1)
+        out_count += 1
+        
+    elif len(gait_data[i]) and i>=7 and i<=11: # 第8到12次往返2次  
+        winGenerator(i, work_trial_2)               
+        out_count += 1
+        
+    elif len(gait_data[i]) and i>=12 and i<=19 and i!=13 and i!=17 and i!=19: # 第13到20次往返3次
+        winGenerator(i, work_trial_3)          
+        out_count += 1
     else:
         continue
 # In[11]:

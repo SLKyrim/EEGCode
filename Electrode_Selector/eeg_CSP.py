@@ -24,7 +24,7 @@ from sklearn.externals import joblib
 
 from sklearn import cross_validation
 # In[2]
-id_subject = 2 # 【受试者的编号】
+id_subject = 6 # 【受试者的编号】
 num_pair = 4 # 【从CSP投影矩阵里取得特征对数】
 
 if id_subject < 10:
@@ -90,7 +90,7 @@ y = np.reshape(y,(len(input_eegwin),))
 
 # 训练集较好表现： 
 # Sub1 => random_state = 7
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=9)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=5)
 #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 # In[]
 def task_Generator(eegwin, label):
@@ -211,27 +211,27 @@ if id_subject < 10:
 else:
     joblib.dump(classifier, "E:\\EEGExoskeleton\\Data\\Models\\Subject_"+str(id_subject)+"_gridsearch_SVM.m")
 # In[Electrode Selection]
-# Ref: Meng, J., et al. 
-# Automated selecting subset of channels based on CSP in motor imagery brain-computer interface system. 
-# in Robotics and biomimetics (ROBIO), 2009 IEEE international conference on. 2009. IEEE.
-score_list = [] # 评分表
-# axis = None时，输入数据为一维则返回向量范数，二维时返回矩阵范数
-M = np.linalg.norm(csp, ord=1, axis=None)
-for i in range(len(csp[0])):
-    m = np.linalg.norm(csp[:,i], ord=1, axis=None)
-    score_list.append(m/M)
-score_order = np.argsort(score_list)
-score_order = score_order[::-1]+1
-
-cap_list = [] # 保存最优电极顺序
-print ("\nOptimal electrode sorted order: ")
-for i in range(len(score_order)):
-    cap_list.append(cap[str(score_order[i])])
-    print (cap[str(score_order[i])], end=' ')
-#    print (cap[str(score_order[i])])
-
-for i in range(len(cap_list)):
-    cap_score[cap_list[i]] = cap_score[cap_list[i]] + 32 - i
+## Ref: Meng, J., et al. 
+## Automated selecting subset of channels based on CSP in motor imagery brain-computer interface system. 
+## in Robotics and biomimetics (ROBIO), 2009 IEEE international conference on. 2009. IEEE.
+#score_list = [] # 评分表
+## axis = None时，输入数据为一维则返回向量范数，二维时返回矩阵范数
+#M = np.linalg.norm(csp, ord=1, axis=None)
+#for i in range(len(csp[0])):
+#    m = np.linalg.norm(csp[:,i], ord=1, axis=None)
+#    score_list.append(m/M)
+#score_order = np.argsort(score_list)
+#score_order = score_order[::-1]+1
+#
+#cap_list = [] # 保存最优电极顺序
+#print ("\nOptimal electrode sorted order: ")
+#for i in range(len(score_order)):
+#    cap_list.append(cap[str(score_order[i])])
+#    print (cap[str(score_order[i])], end=' ')
+##    print (cap[str(score_order[i])])
+#
+#for i in range(len(cap_list)):
+#    cap_score[cap_list[i]] = cap_score[cap_list[i]] + 32 - i
 # In[]  
 #if id_subject < 10:
 #    sio.savemat('E:\\EEGExoskeleton\\Data\\Subject_0'+str(id_subject)+\

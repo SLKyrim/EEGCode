@@ -12,21 +12,21 @@ Created on Fri Dec  1 21:25:28 2017
 % 划窗截取EEG信号
 % 生成指定受试对象的有意图和无意图区域的EEG窗
 
-% 专门针对第5个受试对象的划窗函数
-共进行了26次trail
+% 专门针对第6个受试对象的划窗函数
+共进行了28次trail
 第1次：往返1次
-第2次：打标失败，去掉
+第2次：往返1次
 第3次：往返1次
-第4次：往返1次
-第5次：往返1次
+第4次：打标失败，去掉
+第5次：打标失败，去掉
 第6次：往返1次
-第7次：往返1次
-第8次：往返1次
-第9次：打标失败，去掉
-第10次：往返1次
+第7次：往返1次，峰值点有问题，去掉
+第8次：往返1次，有干扰，建议去掉
+第9次：往返1次
+第10次：打标失败，去掉
 第11次：往返2次
-第12次：往返2次
-第13次：往返2次，往后的组或多或少有干扰
+第12次：打标失败，去掉
+第13次：打标失败，去掉
 第14次：往返2次
 第15次：往返2次
 第16次：往返2次
@@ -34,13 +34,15 @@ Created on Fri Dec  1 21:25:28 2017
 第18次：往返2次
 第19次：往返2次
 第20次：往返2次
-第21次：往返1次
+第21次：打标失败，去掉
 第22次：往返1次
 第23次：往返1次
-第24次：往返1次，有干扰
-第25次：往返1次，有干扰
-第26次：打标失败，去掉
-共往返27次，共27*12=324个窗
+第24次：往返1次
+第25次：往返1次
+第26次：往返1次
+第27次：往返1次
+第28次：往返1次
+共往返26次，共26*12=312个窗
 """
 # In[1]:
 import scipy.io as sio
@@ -71,7 +73,7 @@ for k in range(32-num_elec):
     elec_id.append(cap_id[score[k]]-1)
 
 # In[2]:
-id_subject = 5 # 【受试者的编号】
+id_subject = 6 # 【受试者的编号】
 work_trial_1 = 6 # 往返1次的跨越次数
 work_trial_2 = 12 # 往返2次的跨越次数
 work_trial_3 = 18 # 往返3次的跨越次数
@@ -97,7 +99,6 @@ eeg_data = eeg_mat_data['CutedEEG']
 
 num_trial = len(gait_data) # 获取受试者进行试验的次数
 
-# In[]
 eeg_temp = []
 for i in range(num_trial):
     # 删掉次优的电极（第三个参数为0位删除行）
@@ -228,6 +229,7 @@ def hstackwin(out_eeg, label):
     out_eeg_band2 = bandpass(out_eeg,upper=8,lower=13)
     out_eeg_band3 = bandpass(out_eeg,upper=13,lower=30)
     output = [np.hstack((out_eeg_band0,out_eeg_band1,out_eeg_band2,out_eeg_band3)), label]
+#    output = [np.hstack((out_eeg_band2,out_eeg_band3)), label]
     return output
 # In[EEG Window Generator]
 def winGenerator(i, num_step):
@@ -247,7 +249,9 @@ def winGenerator(i, num_step):
     for j in r_peak_sorted[:num_step]:
         r_peakind_sorted.append(list(gait_data[i][0]).index(j))
     r_peakind_sorted = np.array(sorted(r_peakind_sorted))
-        
+    
+    r_peakind_sorted = r_peakind_sorted[:num_step]
+    
     # 取左膝跨越极值点索引
     l_peakind = find_peak_point(gait_data[i][1])
     l_peak = [gait_data[i][1][j] for j in l_peakind] # 获取极值点
@@ -256,6 +260,8 @@ def winGenerator(i, num_step):
     for j in l_peak_sorted[:num_step]:
         l_peakind_sorted.append(list(gait_data[i][1]).index(j))
     l_peakind_sorted = np.array(sorted(l_peakind_sorted))
+    
+    l_peakind_sorted = l_peakind_sorted[:num_step]
         
     r_valleyind_sorted = np.array(find_valley_point(gait_data[i][0], r_peakind_sorted)) # 右膝跨越前的极小值点
     l_valleyind_sorted = np.array(find_valley_point(gait_data[i][1], l_peakind_sorted)) # 左膝跨越前的极小值点
@@ -329,15 +335,15 @@ valley_bias = 0 # 【设置从膝关节角度最大处的偏移值，作为划�
 stop_bias = 400 # 【设置停顿处从膝关节角度最大处的偏移值，作为划无意图窗的起点】
 gait_win_width = fs_gait / fs * win_width # 在步态数据里将划窗可视化，应该把EEG窗的宽度转换到步态窗的宽度
 for i in range(num_trial):   
-    if len(gait_data[i]) and i>=0 and i<=9 and i!=1 and i!=8:
+    if len(gait_data[i]) and i>=0 and i<=9 and i!=3 and i!=4 and i!=6 and i!=7 and i!=9:
         winGenerator(i, work_trial_1)          
         out_count += 1     
-    elif len(gait_data[i]) and i>=10 and i<=19 and i!=12 and i!=16:
+    elif len(gait_data[i]) and i>=10 and i<=19 and i!=11 and i!=12 and i!=16:
         winGenerator(i, work_trial_2)          
-        out_count += 1     
-    elif len(gait_data[i]) and i>=20 and i!=23 and i!=24 and i!=25:
+        out_count += 1   
+    elif len(gait_data[i]) and i>=20 and i!=20:
         winGenerator(i, work_trial_1)          
-        out_count += 1     
+        out_count += 1   
     else:
         continue
 # In[11]:

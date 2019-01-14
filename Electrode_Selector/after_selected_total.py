@@ -52,8 +52,7 @@ if id_subject < 10:
     gait_mat_data = sio.loadmat('E:\\EEGExoskeleton\\Data\\Subject_0' +\
                                 str(id_subject) + '_Data\\Subject_0' +\
                                 str(id_subject) + '_RawMotion.mat')
-    score = sio.loadmat('E:\\EEGExoskeleton\\Data\\Subject_0'+str(id_subject)+\
-                        '_Data\\Subject_0'+str(id_subject)+'_score.mat')['score']
+    score = sio.loadmat('score_total.mat')['score']
 else:
     eeg_mat_data = sio.loadmat('E:\\EEGExoskeleton\\Data\\Subject_' +\
                                str(id_subject) + '_Data\\Subject_' +\
@@ -61,8 +60,7 @@ else:
     gait_mat_data = sio.loadmat('E:\\EEGExoskeleton\\Data\\Subject_' +\
                                 str(id_subject) + '_Data\\Subject_' +\
                                 str(id_subject) + '_RawMotion.mat')
-    score = sio.loadmat('E:\\EEGExoskeleton\\Data\\Subject_'+str(id_subject)+\
-                        '_Data\\Subject_0'+str(id_subject)+'_score.mat')['score']
+    score = sio.loadmat('score_total.mat')['score']
 
 eeg_data = eeg_mat_data['rawEEG']
 gait_data = gait_mat_data['rawMotion']
@@ -323,7 +321,7 @@ for i in range(num_trial):
         gait_data[0][i][1] = l_pass
 
 # In[]
-for num_elec_selected in range(1,8):
+for num_elec_selected in range(8,33):
     # In[rawdata processor]
     elec_id = [] # 需要去掉的电极索引
     for k in range(32-num_elec_selected):

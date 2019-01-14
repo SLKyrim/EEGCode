@@ -323,7 +323,7 @@ for i in range(num_trial):
         gait_data[0][i][1] = l_pass
 
 # In[]
-for num_elec_selected in range(1,8):
+for num_elec_selected in range(8,33):
     # In[rawdata processor]
     elec_id = [] # 需要去掉的电极索引
     for k in range(32-num_elec_selected):
