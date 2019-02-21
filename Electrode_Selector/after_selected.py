@@ -21,7 +21,7 @@ from sklearn import cross_validation
 import warnings
 warnings.filterwarnings("ignore") 
 # In[]
-id_subject = 4 # 【受试者的编号】
+id_subject = 1 # 【受试者的编号】
 num_pair = 4 # 【从CSP投影矩阵里取得特征对数】
 # 电极帽电极分布
 cap_id = {'Fp1':1 ,'AF3':2 ,'F7 ':3 ,'F3 ':4 ,'FC1':5 ,'FC5':6 ,
@@ -323,7 +323,7 @@ for i in range(num_trial):
         gait_data[0][i][1] = l_pass
 
 # In[]
-for num_elec_selected in range(1,8):
+for num_elec_selected in range(8,32):
     # In[rawdata processor]
     elec_id = [] # 需要去掉的电极索引
     for k in range(32-num_elec_selected):

@@ -6,3 +6,4 @@
 5、第5步运行classifier.py
 
 log：
+RCAR2019结果的复现，运行after_selected.py即可获得指定受试者8-32电极性能
