@@ -17,7 +17,7 @@ import numpy as np
 import scipy.signal as sis
 import matplotlib.pyplot as plt
 
-id_subject = 4 # 【受试者的编号】
+id_subject = 1 # 【受试者的编号】
 
 if id_subject < 10:
     eeg_mat_data = sio.loadmat('E:\\EEGExoskeleton\\Data\\Subject_0' +\
@@ -45,7 +45,6 @@ Wn = 1 # 截止频率1Hz
 def lowpass(data, num_sample):
     b,a = sis.butter(4, 2*Wn/fs, 'lowpass')
     
-    filtered_data = np.zeros(num_sample)
     filtered_data = sis.filtfilt(b,a,data) 
     
     return filtered_data

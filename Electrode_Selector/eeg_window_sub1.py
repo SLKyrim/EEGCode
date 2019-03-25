@@ -32,7 +32,7 @@ Created on Fri Dec  1 21:25:28 2017
 第16次：打标失败
 第17次：往返3次
 第18次：往返3次；数据不好处理，去掉
-第19次：往返3次
+第19次：往返3次；左膝峰值点位置会找错 (暂时未去掉)
 第20次：往返3次；数据不好处理，去掉
 备注：经测试，受试对象基本为右腿跨越，偶有左腿跨越
 最后有效trail有14组，共往返27次，跨越162次，共324+54=378个窗
@@ -304,7 +304,7 @@ for i in range(num_trial):
         winGenerator(i, work_trial_2)               
         out_count += 1
         
-    elif len(gait_data[i]) and i>=12 and i<=19 and i!=13 and i!=17 and i!=19: # 第13到20次往返3次
+    elif len(gait_data[i]) and i>=12 and i<=16 and i!=13: # 第13到20次往返3次
         winGenerator(i, work_trial_3)          
         out_count += 1
     else:

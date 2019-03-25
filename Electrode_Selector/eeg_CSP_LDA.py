@@ -19,7 +19,7 @@ import scipy.linalg as la # 线性代数库
 from sklearn.cross_validation import train_test_split
 from sklearn import grid_search
 from sklearn.metrics import classification_report
-from sklearn import svm
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.externals import joblib
 
 from sklearn import cross_validation
@@ -182,15 +182,14 @@ feat_train_y = feat_train[:,-1]
 
 print("\n#### Searching optimal hyperparameters for precision")
 
-classifier = grid_search.GridSearchCV(svm.SVC(), 
-             parameter_grid, cv=5, scoring="accuracy")
+classifier = LinearDiscriminantAnalysis(solver='lsqr', shrinkage='auto')
 classifier.fit(feat_train_X, feat_train_y)
 
 print("\nScores across the parameter grid:")
-for params, avg_score, _ in classifier.grid_scores_:
-    print(params, '-->', round(avg_score, 4))
-print("\nHighest scoring parameter set:", classifier.best_params_)
-print("\nHighest performance in training set:", classifier.best_score_)
+#for params, avg_score, _ in classifier.grid_scores_:
+#    print(params, '-->', round(avg_score, 4))
+#print("\nHighest scoring parameter set:", classifier.best_params_)
+#print("\nHighest performance in training set:", classifier.best_score_)
 
 # In[用测试集测试分类器]
 eegwin_0_test, eegwin_1_test = task_Generator(X_test, y_test)
